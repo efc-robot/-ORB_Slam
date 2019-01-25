@@ -1,0 +1,109 @@
+
+Dslam端：
+
+1、	ssh yangtx@172.16.0.104，密码yangtx，连接yangtx@Dslam服务器
+
+2、	命令行Python tkinter.py打开服务端
+
+
+TX1 Nvidia端：
+
+1、	ssh nvidia@172.16.0.117,密码 nvidia，连接nvidia服务器
+
+2、	命令行 cd zhezha/ORBSLAM/Example/RGB-D,
+
+python orbslamsever1.py 打开服务端
+
+
+本地客户端：
+
+1、cd Desktop/python python robot.py 打开客户端
+
+客户端（C）, Dslam optitrack服务端（opt_S）, TX1_Nvidia，orbslam服务端（ORB_S）	
+
+
+
+
+一、打开服务端，创建Socket,开始套接字
+
+
+ORB_S端监听端口，打印字符串'Waiting for connection...', 创建socket_1						ORB_S 60-64行
+
+在C端点击connect tx1, 开始套接字，连到ORB_S端,并打印"start listening..."    				C 116-122行
+
+ORB_S接受一个新连接，创建新线程来处理TCP连接												ORB_S 65-70行
+
+
+
+在opt_s端监听端口，打印字符'Please waiting for connection...', 创建socket_2				opt_S 22-24行
+
+在C端点击connect opt, C连接opt_s ip端口   			     				      			C 125-133行
+
+opt_s接受一个新连接，创建新线程来处理TCP连接,打印字符串'...connected from:'					opt_S 26-29行
+
+客户端连接，发送字符串"Hello server. I am client." ，接收返回信息并打印					C 134-143行
+
+
+
+
+二、运行orb_slam,并给opt发ready示意opt端准备开始录制
+
+
+
+在客户端点击ORB_SLAM, C给ORB_S发送字符’s‘                 					   			 C 173行 
+
+ORB_S端接收data																		ORB_S 14-16行
+
+ORB_S端判断若是s，回传字符‘start’并打印													ORB_S 20行
+
+ORB_S端判断slam_end.txt和prepare_ready.txt是否存在，若存在就删除。						ORB_S 23-25行
+
+执行 ORB_slam可执行文件																ORB_S 26行
+
+给C端回传字符‘ready’, 示意opt端准备开始录制												ORB_S 40行
+
+C端接收response，并判断是否为字符‘start’												C 176-187行
+
+C端接收response，并判断是否为字符‘ready’												C 194-199行
+
+若为'ready', 跳出，并给opt_s端发送字符'open vrpn'										C 202行
+
+opt_s端接收信息，判断是否为字符串"open vrpn"，若是，跳出									opt_s 39-48行
+
+异步调用，执行创建刚体工程，并把信息重定向到start_ros.txt   								opt_s 52行
+
+执行获取刚体位姿工程，把信息重定向到pos.txt，并放到后台										opt_s 59行
+
+
+
+
+三、Quit ORB_SLAM，分别给两个服务端发送结束指令
+
+
+C端给tcpCliSock_1发送字符'q',并打印													C 235-236行
+
+C端给tcpCliSock_2发送字符'kill'，并打印   												C 237-238行
+
+ORB_S端判断若为字符'q',则回传'quit'到客户端并打印'quit'   								ORB_S 48-51行
+
+ORB_S端 新建一个slam_end.txt文件														ORB_S 53行
+
+opt_S端判断若为字符'kill'，则查看后台进程，并把信息重定向到ps.txt							opt_s 68-71行
+
+opt_S端判断是否存在ps_aux_grep.txt,并把它写出到变量ps_aux_grep_contents中					73-79行
+
+判断获取位姿工程的进程是否在后台进程里，并获取进程号											80-83行
+
+若存在，立即杀死进程																	85-93行
+
+
+
+
+	
+
+
+
+
+
+
+
